@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Camino a la Gloria — Simulador de Carrera</title>
+<style>
+:root{
+  --bg:#07110d;
+  --panel:#0e1b15;
+  --panel2:#13251d;
+  --line:#254233;
+  --text:#f2f7f3;
+  --muted:#9db1a5;
+  --green:#38e078;
+  --green2:#17a959;
+  --gold:#ffc857;
+  --red:#ff6470;
+  --blue:#64a8ff;
+  --purple:#b990ff;
+  --shadow:0 18px 60px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:
+radial-gradient(circle at 15% 0%,rgba(56,224,120,.16),transparent 28%),
+radial-gradient(circle at 100% 100%,rgba(100,168,255,.10),transparent 35%),
+var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app{min-height:100vh}
+.topbar{
+ position:sticky;top:0;z-index:40;
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ padding:12px max(14px,env(safe-area-inset-left));
+ background:rgba(7,17,13,.88);backdrop-filter:blur(18px);
+ border-bottom:1px solid rgba(255,255,255,.07)
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.02em}
+.brand-ball{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+ background:linear-gradient(135deg,var(--green),#d7ff69);color:#07110d;box-shadow:0 0 28px rgba(56,224,120,.28)}
+.top-actions{display:flex;gap:8px}
+.icon-btn,.small-btn{
+ border:1px solid var(--line);background:var(--panel);color:var(--text);
+ border-radius:10px;padding:9px 11px;font-weight:700
+}
+.icon-btn:hover,.small-btn:hover{border-color:var(--green);transform:translateY(-1px)}
+.shell{width:min(1320px,100%);margin:0 auto;padding:16px 16px 96px}
+.hero{
+ display:grid;grid-template-columns:1.4fr .8fr;gap:14px;margin-bottom:14px
+}
+.player-card,.season-card,.panel{
+ border:1px solid rgba(255,255,255,.08);
+ background:linear-gradient(145deg,rgba(19,37,29,.96),rgba(10,24,17,.96));
+ border-radius:22px;box-shadow:var(--shadow)
+}
+.player-card{padding:20px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;overflow:hidden;position:relative}
+.player-card:after{
+ content:"";position:absolute;right:-70px;top:-90px;width:240px;height:240px;border-radius:50%;
+ background:radial-gradient(circle,rgba(56,224,120,.22),transparent 65%);pointer-events:none
+}
+.avatar{
+ width:84px;height:84px;border-radius:22px;display:grid;place-items:center;font-size:40px;
+ background:linear-gradient(145deg,#1d6b3b,#0d2c1a);border:1px solid rgba(255,255,255,.14)
+}
+.player-name{font-size:clamp(23px,4vw,38px);font-weight:950;line-height:1;margin-bottom:7px}
+.player-sub{color:var(--muted);font-weight:650}
+.badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.badge{padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:12px;font-weight:800}
+.overall{text-align:center;z-index:2}
+.ovr-number{font-size:54px;font-weight:950;line-height:.9;color:var(--green)}
+.ovr-label{font-size:11px;letter-spacing:.18em;color:var(--muted);font-weight:900;margin-top:5px}
+.season-card{padding:18px;display:flex;flex-direction:column;justify-content:center}
+.season-title{font-size:13px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.14em}
+.season-main{font-size:25px;font-weight:950;margin:7px 0}
+.progress{height:11px;background:#07110d;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:99px;transition:.35s}
+.season-footer{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;font-weight:750;margin-top:7px}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+.kpi{
+ padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:16px;
+ background:rgba(14,27,21,.86);min-width:0
+}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.kpi-value{font-size:20px;font-weight:950;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{
+ display:flex;gap:7px;overflow:auto;padding:4px;margin-bottom:12px;
+ position:sticky;top:60px;z-index:30;background:rgba(7,17,13,.86);backdrop-filter:blur(12px)
+}
+.tab-btn{
+ flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+ border-radius:12px;padding:10px 14px;font-weight:850
+}
+.tab-btn.active{background:var(--green);color:#06100b;border-color:var(--green)}
+.tab{display:none}
+.tab.active{display:block}
+.grid-2{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+.panel{padding:18px}
+.panel-title{font-size:18px;font-weight:950;margin:0 0 14px}
+.panel-sub{color:var(--muted);font-size:13px;margin-top:-8px;margin-bottom:14px}
+.action-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.action{
+ border:1px solid var(--line);border-radius:16px;padding:16px;text-align:left;color:var(--text);
+ background:linear-gradient(145deg,var(--panel2),var(--panel));min-height:118px;transition:.18s
+}
+.action:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:0 12px 30px rgba(0,0,0,.22)}
+.action:disabled{opacity:.42;cursor:not-allowed;transform:none}
+.action-icon{font-size:25px}.action-title{font-weight:950;font-size:15px;margin:8px 0 3px}.action-desc{color:var(--muted);font-size:12px;line-height:1.35}
+.timeline{display:flex;flex-direction:column;gap:9px;max-height:510px;overflow:auto;padding-right:4px}
+.log{
+ display:grid;grid-template-columns:auto 1fr;gap:10px;padding:11px;border-radius:14px;
+ background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06)
+}
+.log-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(56,224,120,.11)}
+.log-title{font-weight:850;font-size:13px}.log-text{color:var(--muted);font-size:12px;line-height:1.35;margin-top:2px}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat-row{display:grid;grid-template-columns:36px 1fr 34px;align-items:center;gap:10px}
+.stat-name{font-weight:900;font-size:12px;color:var(--muted)}
+.stat-bar{height:10px;background:#07110d;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.stat-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--green2),var(--green));transition:.35s}
+.stat-val{font-weight:950;text-align:right}
+.match-stage{text-align:center;padding:22px 10px}
+.match-clubs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.club-badge{width:82px;height:82px;border-radius:22px;display:grid;place-items:center;font-size:36px;margin:0 auto 10px;background:linear-gradient(145deg,#1f3f2e,#0b1c13);border:1px solid rgba(255,255,255,.12)}
+.club-name{font-weight:950;font-size:18px}
+.vs{font-size:22px;color:var(--muted);font-weight:950}
+.tactic-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:20px}
+.tactic{
+ border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:14px;padding:13px 9px;font-weight:850
+}
+.tactic.active{border-color:var(--green);box-shadow:0 0 0 2px rgba(56,224,120,.15)}
+.primary{
+ border:0;background:linear-gradient(135deg,var(--green),#9cff62);color:#06100b;
+ font-weight:950;border-radius:14px;padding:13px 18px;box-shadow:0 12px 32px rgba(56,224,120,.18)
+}
+.primary:hover{transform:translateY(-1px)}
+.danger{background:linear-gradient(135deg,#ff5866,#ff8a68);color:white}
+.wide{width:100%}
+.result-box{margin-top:16px;padding:16px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08)}
+.training-grid,.offers-grid,.cheat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.training-card,.offer,.cheat-card{
+ padding:15px;border-radius:16px;background:linear-gradient(145deg,var(--panel2),var(--panel));
+ border:1px solid var(--line)
+}
+.training-card h3,.offer h3,.cheat-card h3{margin:0 0 7px;font-size:15px}
+.training-card p,.offer p,.cheat-card p{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.4}
+.offer-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.offer-rating{font-size:24px;font-weight:950;color:var(--gold)}
+.offer-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:12px 0}
+.mini{background:rgba(255,255,255,.04);border-radius:10px;padding:8px}
+.mini b{display:block;font-size:12px}.mini span{font-size:10px;color:var(--muted)}
+.btn-row{display:flex;gap:8px}
+.secondary{
+ border:1px solid var(--line);background:transparent;color:var(--text);font-weight:850;
+ border-radius:11px;padding:10px 12px
+}
+.secondary:hover{border-color:var(--green)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px}
+table{width:100%;border-collapse:collapse;min-width:720px}
+th,td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;font-size:12px}
+th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;background:#0b1811}
+tr:last-child td{border-bottom:0}
+.awards{display:flex;flex-wrap:wrap;gap:8px}
+.award{padding:10px 12px;border-radius:12px;background:rgba(255,200,87,.08);border:1px solid rgba(255,200,87,.25);font-size:12px;font-weight:850}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.switch input{width:46px;height:26px;appearance:none;border-radius:99px;background:#27382f;position:relative;transition:.2s}
+.switch input:after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:white;left:3px;top:3px;transition:.2s}
+.switch input:checked{background:var(--green2)}
+.switch input:checked:after{left:23px}
+.cheat-warning{padding:12px;border:1px solid rgba(255,200,87,.32);background:rgba(255,200,87,.08);border-radius:14px;color:#ffe4a8;font-size:12px;margin-bottom:12px}
+.modal{
+ position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:16px;backdrop-filter:blur(12px)
+}
+.modal-card{width:min(650px,100%);max-height:92vh;overflow:auto;border-radius:24px;padding:22px;background:linear-gradient(145deg,#15281e,#0a1710);border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 100px rgba(0,0,0,.55)}
+.modal-title{font-size:28px;font-weight:950;margin:0 0 6px}.modal-sub{color:var(--muted);margin:0 0 18px;line-height:1.45}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.field label{display:block;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.field input,.field select{
+ width:100%;background:#07110d;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;outline:none
+}
+.field input:focus,.field select:focus{border-color:var(--green)}
+.event-options{display:grid;gap:9px;margin-top:16px}
+.event-option{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:14px;padding:13px;text-align:left}
+.event-option:hover{border-color:var(--green)}
+.toast{position:fixed;z-index:200;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#f4fff7;color:#07110d;padding:11px 15px;border-radius:12px;font-weight:850;box-shadow:0 15px 50px rgba(0,0,0,.35);transition:.25s;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.retired{padding:20px;border:1px solid rgba(255,200,87,.25);background:rgba(255,200,87,.07);border-radius:16px;text-align:center}
+.mobile-nav{display:none}
+@media(max-width:900px){
+ .hero,.grid-2{grid-template-columns:1fr}
+ .kpis{grid-template-columns:repeat(3,1fr)}
+ .training-grid,.offers-grid,.cheat-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:620px){
+ .shell{padding:12px 12px 92px}
+ .brand span:last-child{display:none}
+ .player-card{grid-template-columns:auto 1fr;padding:15px;gap:12px}
+ .player-card .overall{grid-column:1/-1;display:flex;align-items:baseline;justify-content:center;gap:7px}
+ .avatar{width:62px;height:62px;font-size:30px;border-radius:17px}
+ .player-name{font-size:24px}
+ .kpis{grid-template-columns:repeat(2,1fr)}
+ .tabs{display:none}
+ .action-grid,.training-grid,.offers-grid,.cheat-grid,.form-grid,.stats-grid{grid-template-columns:1fr}
+ .tactic-grid{grid-template-columns:1fr}
+ .match-clubs{grid-template-columns:1fr}
+ .vs{margin:3px}
+ .mobile-nav{
+  display:grid;grid-template-columns:repeat(6,1fr);position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(7,17,13,.94);backdrop-filter:blur(18px);border-top:1px solid rgba(255,255,255,.08);
+  padding:7px 4px calc(7px + env(safe-area-inset-bottom))
+ }
+ .mobile-nav button{border:0;background:transparent;color:var(--muted);font-size:10px;font-weight:800;padding:5px 2px}
+ .mobile-nav button b{display:block;font-size:18px;margin-bottom:2px}
+ .mobile-nav button.active{color:var(--green)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="brand-ball">⚽</div><span>CAMINO A LA GLORIA</span></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="saveBtn" title="Guardar">💾</button>
+      <button class="icon-btn" id="newBtn" title="Nueva carrera">↻</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="player-card">
+        <div class="avatar" id="avatar">🧑‍🎤</div>
+        <div>
+          <div class="player-name" id="playerName">Tu jugador</div>
+          <div class="player-sub" id="playerSub">15 años · Delantero · Chile</div>
+          <div class="badges">
+            <span class="badge" id="clubBadge">Academia local</span>
+            <span class="badge" id="roleBadge">Promesa juvenil</span>
+            <span class="badge" id="statusBadge">Disponible</span>
+          </div>
+        </div>
+        <div class="overall"><div class="ovr-number" id="overall">60</div><div class="ovr-label">MEDIA</div></div>
+      </div>
+
+      <div class="season-card">
+        <div class="season-title">Temporada actual</div>
+        <div class="season-main" id="seasonName">2026/27 · Mes 1 de 10</div>
+        <div class="progress"><span id="seasonProgress" style="width:10%"></span></div>
+        <div class="season-footer"><span id="seasonApps">0 partidos</span><span id="seasonGA">0 G · 0 A</span></div>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <div class="kpi"><div class="kpi-label">Valor</div><div class="kpi-value" id="marketValue">€250 mil</div></div>
+      <div class="kpi"><div class="kpi-label">Sueldo</div><div class="kpi-value" id="salary">€500/sem</div></div>
+      <div class="kpi"><div class="kpi-label">Dinero</div><div class="kpi-value" id="money">€0</div></div>
+      <div class="kpi"><div class="kpi-label">Moral</div><div class="kpi-value" id="morale">70</div></div>
+      <div class="kpi"><div class="kpi-label">Energía</div><div class="kpi-value" id="fitness">100</div></div>
+      <div class="kpi"><div class="kpi-label">Fama</div><div class="kpi-value" id="reputation">5</div></div>
+    </section>
+
+    <nav class="tabs" id="desktopTabs">
+      <button class="tab-btn active" data-tab="career">🏠 Carrera</button>
+      <button class="tab-btn" data-tab="match">⚽ Partido</button>
+      <button class="tab-btn" data-tab="training">🏋️ Entrenar</button>
+      <button class="tab-btn" data-tab="market">📑 Contratos</button>
+      <button class="tab-btn" data-tab="stats">📊 Estadísticas</button>
+      <button class="tab-btn" data-tab="cheats">🧪 Cheats</button>
+    </nav>
+
+    <section class="tab active" id="tab-career">
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="panel-title">Centro de carrera</h2>
+          <p class="panel-sub">Cada mes puedes disputar un partido destacado, entrenar y luego avanzar el calendario.</p>
+          <div id="retiredBox" class="retired hidden"></div>
+          <div class="action-grid" id="careerActions">
+            <button class="action" id="quickMatchBtn">
+              <div class="action-icon">⚡</div>
+              <div class="action-title">Simular partido destacado</div>
+              <div class="action-desc">Juega el encuentro más importante del mes y busca goles, asistencias y una gran nota.</div>
+            </button>
+            <button class="action" id="advanceBtn">
+              <div class="action-icon">📅</div>
+              <div class="action-title">Avanzar al siguiente mes</div>
+              <div class="action-desc">Simula el resto de partidos, cobra tu sueldo y descubre eventos de carrera.</div>
+            </button>
+            <button class="action" id="agentBtn">
+              <div class="action-icon">🤝</div>
+              <div class="action-title">Hablar con tu agente</div>
+              <div class="action-desc">Busca rumores, mejora tus opciones de transferencia o negocia tu situación.</div>
+            </button>
+            <button class="action" id="restBtn">
+              <div class="action-icon">🛌</div>
+              <div class="action-title">Descansar</div>
+              <div class="action-desc">Recupera energía y moral, pero pierdes una oportunidad de entrenamiento este mes.</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Noticias de tu carrera</h2>
+          <div class="timeline" id="timeline"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <h2 class="panel-title">Atributos</h2>
+        <div class="stats-grid" id="attributes"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-match">
+      <div class="panel">
+        <h2 class="panel-title">Partido destacado</h2>
+        <p class="panel-sub" id="matchContext">Elige tu enfoque antes de salir a la cancha.</p>
+        <div class="match-stage">
+          <div class="match-clubs">
+            <div><div class="club-badge" id="homeIcon">🛡️</div><div class="club-name" id="homeName">Tu club</div></div>
+            <div class="vs">VS</div>
+            <div><div class="club-badge" id="awayIcon">🐉</div><div class="club-name" id="awayName">Rival</div></div>
+          </div>
+          <div class="tactic-grid">
+            <button class="tactic active" data-tactic="balanced">⚖️ Equilibrado<br><small>Rendimiento estable</small></button>
+            <button class="tactic" data-tactic="attack">🔥 Buscar el gol<br><small>Más goles, más cansancio</small></button>
+            <button class="tactic" data-tactic="team">🧠 Jugar para el equipo<br><small>Más pases y asistencias</small></button>
+          </div>
+          <button class="primary" id="playMatchBtn" style="margin-top:16px">JUGAR PARTIDO</button>
+          <div class="result-box hidden" id="matchResult"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-training">
+      <div class="panel">
+        <h2 class="panel-title">Entrenamiento mensual</h2>
+        <p class="panel-sub">Puedes completar un entrenamiento por mes. Elige en qué convertirte.</p>
+        <div class="training-grid" id="trainingGrid"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-market">
+      <div class="panel">
+        <h2 class="panel-title">Contratos y fichajes</h2>
+        <p class="panel-sub">Las ofertas aparecen según tu rendimiento, edad, fama y potencial.</p>
+        <div class="offers-grid" id="offersGrid"></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-stats">
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="panel-title">Totales de carrera</h2>
+          <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin:0">
+            <div class="kpi"><div class="kpi-label">Partidos</div><div class="kpi-value" id="careerApps">0</div></div>
+            <div class="kpi"><div class="kpi-label">Goles</div><div class="kpi-value" id="careerGoals">0</div></div>
+            <div class="kpi"><div class="kpi-label">Asistencias</div><div class="kpi-value" id="careerAssists">0</div></div>
+            <div class="kpi"><div class="kpi-label">Títulos</div><div class="kpi-value" id="careerTitles">0</div></div>
+            <div class="kpi"><div class="kpi-label">Selección</div><div class="kpi-value" id="nationalCaps">0</div></div>
+            <div class="kpi"><div class="kpi-label">Balones de Oro</div><div class="kpi-value" id="ballonDors">0</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">Palmarés</h2>
+          <div class="awards" id="awards"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <h2 class="panel-title">Temporada por temporada</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Temporada</th><th>Edad</th><th>Club</th><th>PJ</th><th>G</th><th>A</th><th>Nota</th><th>Títulos</th><th>Media</th></tr></thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-cheats">
+      <div class="panel">
+        <h2 class="panel-title">Laboratorio de cheats 🧪</h2>
+        <div class="cheat-warning">Los trucos no bloquean logros: este es tu universo. Úsalos para crear una carrera realista, una superestrella imposible o el caos absoluto.</div>
+        <div class="cheat-grid">
+          <div class="cheat-card"><div class="switch"><div><h3>Sin lesiones</h3><p>Nunca sufrirás una lesión.</p></div><input type="checkbox" id="cheatNoInjury"></div></div>
+          <div class="cheat-card"><div class="switch"><div><h3>Siempre titular</h3><p>Juegas todos los partidos.</p></div><input type="checkbox" id="cheatStarter"></div></div>
+          <div class="cheat-card"><div class="switch"><div><h3>Dinero infinito</h3><p>Tu cuenta nunca baja de €999 M.</p></div><input type="checkbox" id="cheatMoney"></div></div>
+          <div class="cheat-card"><div class="switch"><div><h3>Potencial máximo</h3><p>Progresas mucho más rápido.</p></div><input type="checkbox" id="cheatPotential"></div></div>
+
+          <div class="cheat-card"><h3>Subir atributos</h3><p>Aumenta todos tus atributos en 5 puntos.</p><button class="secondary wide" data-cheat="plus5">+5 A TODO</button></div>
+          <div class="cheat-card"><h3>Hacerse millonario</h3><p>Añade €10.000.000 a tu cuenta.</p><button class="secondary wide" data-cheat="money10">+€10 MILLONES</button></div>
+          <div class="cheat-card"><h3>Partido perfecto</h3><p>El próximo partido será una actuación legendaria.</p><button class="secondary wide" data-cheat="perfect">ACTIVAR</button></div>
+          <div class="cheat-card"><h3>Ofertas mundiales</h3><p>Genera propuestas de tres clubes importantes.</p><button class="secondary wide" data-cheat="offers">GENERAR OFERTAS</button></div>
+          <div class="cheat-card"><h3>Curar y motivar</h3><p>Recupera energía, moral y elimina lesiones.</p><button class="secondary wide" data-cheat="heal">RECUPERAR TODO</button></div>
+          <div class="cheat-card">
+            <h3>Cambiar edad</h3><p>Salta a cualquier edad entre 15 y 39 años.</p>
+            <div class="btn-row"><input id="ageCheat" type="number" min="15" max="39" value="18" style="width:85px;background:#07110d;color:white;border:1px solid var(--line);border-radius:10px;padding:9px"><button class="secondary" data-cheat="age">APLICAR</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="mobile-nav" id="mobileTabs">
+    <button class="active" data-tab="career"><b>🏠</b>Carrera</button>
+    <button data-tab="match"><b>⚽</b>Partido</button>
+    <button data-tab="training"><b>🏋️</b>Entrenar</button>
+    <button data-tab="market"><b>📑</b>Fichajes</button>
+    <button data-tab="stats"><b>📊</b>Stats</button>
+    <button data-tab="cheats"><b>🧪</b>Cheats</button>
+  </nav>
+</div>
+
+<div class="modal" id="newCareerModal">
+  <div class="modal-card">
+    <h1 class="modal-title">Crea tu futbolista</h1>
+    <p class="modal-sub">Empiezas con 15 años en una academia. Tus decisiones, rendimiento y un poco de suerte construirán tu historia.</p>
+    <div class="form-grid">
+      <div class="field"><label>Nombre</label><input id="createName" maxlength="24" value="Alex Melo"></div>
+      <div class="field"><label>Nacionalidad</label>
+        <select id="createNation">
+          <option>Chile</option><option>Argentina</option><option>Brasil</option><option>España</option><option>Portugal</option><option>Uruguay</option><option>Colombia</option><option>México</option><option>Inglaterra</option><option>Francia</option><option>Alemania</option><option>Italia</option>
+        </select>
+      </div>
+      <div class="field"><label>Posición</label>
+        <select id="createPosition">
+          <option value="ST">Delantero centro</option><option value="LW">Extremo</option><option value="CAM">Mediapunta</option><option value="CM">Mediocampista</option><option value="CB">Defensa central</option><option value="GK">Arquero</option>
+        </select>
+      </div>
+      <div class="field"><label>Pie hábil</label><select id="createFoot"><option>Derecho</option><option>Izquierdo</option><option>Ambidiestro</option></select></div>
+      <div class="field"><label>Estilo</label>
+        <select id="createStyle">
+          <option value="prodigy">Prodigio técnico</option><option value="athlete">Atleta explosivo</option><option value="brain">Cerebro del equipo</option><option value="fighter">Guerrero incansable</option><option value="balanced">Jugador completo</option>
+        </select>
+      </div>
+      <div class="field"><label>Dificultad</label>
+        <select id="createDifficulty"><option value="easy">Promesa mundial</option><option value="normal" selected>Realista</option><option value="hard">Desde abajo</option></select>
+      </div>
+    </div>
+    <button class="primary wide" id="startCareerBtn" style="margin-top:18px">COMENZAR CARRERA</button>
+  </div>
+</div>
+
+<div class="modal hidden" id="eventModal">
+  <div class="modal-card">
+    <div style="font-size:40px" id="eventIcon">🎭</div>
+    <h2 class="modal-title" id="eventTitle">Evento</h2>
+    <p class="modal-sub" id="eventText"></p>
+    <div class="event-options" id="eventOptions"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="retirementModal">
+  <div class="modal-card">
+    <div style="font-size:50px">🏟️</div>
+    <h2 class="modal-title">¿Es hora de retirarse?</h2>
+    <p class="modal-sub" id="retirementText"></p>
+    <div class="btn-row">
+      <button class="primary" id="retireYes">RETIRARME</button>
+      <button class="secondary" id="retireNo">UNA TEMPORADA MÁS</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
+const rnd = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+const chance = p => Math.random()<p;
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const fmtMoney = n => {
+  if(n>=1e9) return "€"+(n/1e9).toFixed(1)+" mil M";
+  if(n>=1e6) return "€"+(n/1e6).toFixed(n>=1e8?0:1)+" M";
+  if(n>=1e3) return "€"+Math.round(n/1e3)+" mil";
+  return "€"+Math.round(n);
+};
+
+const positionNames={ST:"Delantero",LW:"Extremo",CAM:"Mediapunta",CM:"Mediocampista",CB:"Defensa",GK:"Arquero"};
+const nationFlags={Chile:"🇨🇱",Argentina:"🇦🇷",Brasil:"🇧🇷",España:"🇪🇸",Portugal:"🇵🇹",Uruguay:"🇺🇾",Colombia:"🇨🇴",México:"🇲🇽",Inglaterra:"🏴",Francia:"🇫🇷",Alemania:"🇩🇪",Italia:"🇮🇹"};
+
+const clubs = [
+ {name:"Academia del Puerto",icon:"⚓",tier:1,country:"Chile",salary:500,rep:2},
+ {name:"Deportivo Cordillera",icon:"⛰️",tier:2,country:"Chile",salary:1800,rep:8},
+ {name:"Cóndores FC",icon:"🦅",tier:3,country:"Chile",salary:5500,rep:15},
+ {name:"Racing del Plata",icon:"🔵",tier:4,country:"Argentina",salary:12000,rep:25},
+ {name:"São Verdes",icon:"🟢",tier:4,country:"Brasil",salary:14000,rep:27},
+ {name:"Lisboa Atlântico",icon:"🌊",tier:5,country:"Portugal",salary:24000,rep:38},
+ {name:"Real Sevilla",icon:"👑",tier:6,country:"España",salary:42000,rep:52},
+ {name:"London Lions",icon:"🦁",tier:6,country:"Inglaterra",salary:52000,rep:57},
+ {name:"Milano Rossonero",icon:"🔴",tier:7,country:"Italia",salary:75000,rep:67},
+ {name:"Paris Étoile",icon:"⭐",tier:7,country:"Francia",salary:80000,rep:70},
+ {name:"Bavaria 1900",icon:"🔷",tier:8,country:"Alemania",salary:105000,rep:80},
+ {name:"Manchester Royals",icon:"🔱",tier:9,country:"Inglaterra",salary:150000,rep:90},
+ {name:"Madrid Blanco",icon:"👑",tier:10,country:"España",salary:220000,rep:98},
+ {name:"Catalunya Blaugrana",icon:"🔵",tier:10,country:"España",salary:210000,rep:98}
+];
+
+const opponents=["Unión Central","Atlético Norte","Real Bahía","Sporting Azul","Estrella Roja","Ciudad FC","Rovers United","Olympique Doré","Borussia Adler","Inter Nero","Athletic Costa","Dynamo Capital"];
+const awardNames=["Jugador del mes","Mejor joven","Goleador de liga","Máximo asistidor","Campeón de liga","Campeón de copa","Campeón continental","Leyenda del club","Balón de Oro","Campeón del mundo"];
+
+const baseState = () => ({
+ version:1, name:"Alex Melo", nation:"Chile", position:"ST", foot:"Derecho", style:"prodigy", difficulty:"normal",
+ age:15, seasonYear:2026, month:1, club:clubs[0], role:"Promesa juvenil",
+ attributes:{pace:61,shooting:62,passing:57,dribbling:64,defending:32,physical:53},
+ overall:58,potential:91,marketValue:250000,salary:500,money:0,morale:72,fitness:100,reputation:4,
+ injuredMonths:0, trainedThisMonth:false, restedThisMonth:false, playedFeatured:false,
+ season:{apps:0,goals:0,assists:0,ratingSum:0,titles:0},
+ career:{apps:0,goals:0,assists:0,titles:0,nationalCaps:0,nationalGoals:0,ballonDors:0},
+ history:[],awards:[],offers:[],logs:[],retired:false,
+ cheats:{noInjury:false,starter:false,money:false,potential:false,perfectNext:false},
+ tactic:"balanced", nationalTeam:false, agentCooldown:0
+});
+let game=baseState();
+
+function calcOverall(){
+ const a=game.attributes;
+ const weights={
+  ST:{pace:.18,shooting:.35,passing:.12,dribbling:.20,defending:.02,physical:.13},
+  LW:{pace:.27,shooting:.22,passing:.14,dribbling:.25,defending:.02,physical:.10},
+  CAM:{pace:.10,shooting:.18,passing:.31,dribbling:.27,defending:.04,physical:.10},
+  CM:{pace:.08,shooting:.12,passing:.32,dribbling:.18,defending:.15,physical:.15},
+  CB:{pace:.10,shooting:.02,passing:.13,dribbling:.05,defending:.40,physical:.30},
+  GK:{pace:.03,shooting:.02,passing:.15,dribbling:.04,defending:.44,physical:.32}
+ }[game.position];
+ game.overall=Math.round(Object.keys(a).reduce((s,k)=>s+a[k]*weights[k],0));
+ game.marketValue=Math.round((game.overall**4.1)*Math.max(1,game.reputation/12)*Math.max(.45,(36-game.age)/18));
+}
+function applyCreationBonuses(){
+ const a=game.attributes;
+ const style=game.style;
+ if(style==="prodigy"){a.dribbling+=5;a.passing+=3;game.potential+=3}
+ if(style==="athlete"){a.pace+=6;a.physical+=5;a.dribbling-=2}
+ if(style==="brain"){a.passing+=7;a.dribbling+=2;a.pace-=2}
+ if(style==="fighter"){a.physical+=7;a.defending+=4;a.shooting-=1}
+ if(style==="balanced") Object.keys(a).forEach(k=>a[k]+=2);
+ if(game.position==="CB"){a.defending+=18;a.physical+=10;a.shooting-=16;a.dribbling-=7}
+ if(game.position==="GK"){a.defending+=22;a.physical+=8;a.shooting-=22;a.pace-=10}
+ if(game.position==="CM"){a.passing+=7;a.defending+=6;a.shooting-=4}
+ if(game.position==="CAM"){a.passing+=8;a.dribbling+=6;a.defending-=7}
+ if(game.position==="LW"){a.pace+=8;a.dribbling+=6;a.defending-=6}
+ const diff={easy:5,normal:0,hard:-5}[game.difficulty];
+ Object.keys(a).forEach(k=>a[k]=clamp(a[k]+diff,20,82));
+ game.potential=clamp(game.potential+(game.difficulty==="easy"?5:game.difficulty==="hard"?-5:0),78,99);
+ calcOverall();
+}
+function seasonLabel(){return `${game.seasonYear}/${String(game.seasonYear+1).slice(-2)}`}
+function addLog(icon,title,text){
+ game.logs.unshift({icon,title,text,stamp:`${seasonLabel()} · Mes ${game.month}`});
+ game.logs=game.logs.slice(0,35);
+}
+function toast(text){
+ const t=$("#toast");t.textContent=text;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2300);
+}
+function saveGame(silent=false){
+ localStorage.setItem("caminoGloriaSave",JSON.stringify(game));
+ if(!silent) toast("Partida guardada");
+}
+function loadGame(){
+ const raw=localStorage.getItem("caminoGloriaSave");
+ if(raw){
+  try{game={...baseState(),...JSON.parse(raw)};game.club=game.club||clubs[0];return true}catch(e){}
+ }
+ return false;
+}
+function resetCareer(){
+ if(confirm("¿Borrar la carrera actual y comenzar una nueva?")){
+  localStorage.removeItem("caminoGloriaSave");
+  game=baseState();$("#newCareerModal").classList.remove("hidden");render();
+ }
+}
+function setTab(tab){
+ $$(".tab").forEach(x=>x.classList.toggle("active",x.id===`tab-${tab}`));
+ $$(".tab-btn,[data-tab]").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));
+ window.scrollTo({top:0,behavior:"smooth"});
+ if(tab==="match")setupMatch();
+}
+function attributeLabel(k){return {pace:"Ritmo",shooting:"Tiro",passing:"Pase",dribbling:"Regate",defending:"Defensa",physical:"Físico"}[k]}
+function statusText(){
+ if(game.retired)return "Retirado";
+ if(game.injuredMonths>0)return `Lesionado · ${game.injuredMonths} mes(es)`;
+ if(game.fitness<35)return "Agotado";
+ return "Disponible";
+}
+function roleText(){
+ if(game.cheats.starter)return "Titular indiscutido";
+ if(game.overall>=90)return "Superestrella mundial";
+ if(game.overall>=84)return "Estrella del equipo";
+ if(game.overall>=77)return "Titular habitual";
+ if(game.overall>=69)return "Jugador de rotación";
+ return game.age<=19?"Promesa juvenil":"Reserva";
+}
+function render(){
+ calcOverall();
+ if(game.cheats.money) game.money=Math.max(game.money,999000000);
+ $("#playerName").textContent=game.name;
+ $("#playerSub").textContent=`${game.age} años · ${positionNames[game.position]} · ${nationFlags[game.nation]||"🌍"} ${game.nation}`;
+ $("#avatar").textContent=game.position==="GK"?"🧤":game.overall>=90?"🐐":game.overall>=80?"🌟":"🧑‍🎤";
+ $("#clubBadge").textContent=`${game.club.icon} ${game.club.name}`;
+ $("#roleBadge").textContent=roleText();
+ $("#statusBadge").textContent=statusText();
+ $("#overall").textContent=game.overall;
+ $("#seasonName").textContent=`${seasonLabel()} · Mes ${game.month} de 10`;
+ $("#seasonProgress").style.width=`${game.month*10}%`;
+ $("#seasonApps").textContent=`${game.season.apps} partidos`;
+ $("#seasonGA").textContent=`${game.season.goals} G · ${game.season.assists} A`;
+ $("#marketValue").textContent=fmtMoney(game.marketValue);
+ $("#salary").textContent=`${fmtMoney(game.salary)}/sem`;
+ $("#money").textContent=fmtMoney(game.money);
+ $("#morale").textContent=Math.round(game.morale);
+ $("#fitness").textContent=Math.round(game.fitness);
+ $("#reputation").textContent=Math.round(game.reputation);
+
+ $("#attributes").innerHTML=Object.entries(game.attributes).map(([k,v])=>`
+  <div class="stat-row"><div class="stat-name">${attributeLabel(k)}</div><div class="stat-bar"><div class="stat-fill" style="width:${v}%"></div></div><div class="stat-val">${Math.round(v)}</div></div>
+ `).join("");
+
+ $("#timeline").innerHTML=game.logs.length?game.logs.map(l=>`
+  <div class="log"><div class="log-icon">${l.icon}</div><div><div class="log-title">${l.title}</div><div class="log-text">${l.text}</div><div class="log-text" style="opacity:.55;margin-top:4px">${l.stamp}</div></div></div>
+ `).join(""):`<div class="log"><div class="log-icon">🌱</div><div><div class="log-title">Todo comienza aquí</div><div class="log-text">Da tus primeros pasos en el fútbol profesional.</div></div></div>`;
+
+ $("#quickMatchBtn").disabled=game.retired||game.playedFeatured||game.injuredMonths>0;
+ $("#advanceBtn").disabled=game.retired;
+ $("#agentBtn").disabled=game.retired||game.agentCooldown>0;
+ $("#restBtn").disabled=game.retired||game.restedThisMonth;
+ $("#careerActions").classList.toggle("hidden",game.retired);
+ $("#retiredBox").classList.toggle("hidden",!game.retired);
+ if(game.retired)$("#retiredBox").innerHTML=`<h2>🏆 Carrera finalizada</h2><p>${game.name} se retiró con ${game.career.apps} partidos, ${game.career.goals} goles, ${game.career.assists} asistencias y ${game.career.titles} títulos.</p>`;
+
+ renderTraining();renderOffers();renderStats();renderCheats();
+ saveGame(true);
+}
+function renderTraining(){
+ const disabled=game.trainedThisMonth||game.retired||game.injuredMonths>0||game.fitness<20;
+ const plans=[
+  ["finalizacion","🎯","Finalización","+ Tiro y regate","shooting","dribbling"],
+  ["velocidad","⚡","Velocidad","+ Ritmo y físico","pace","physical"],
+  ["creacion","🧠","Creación","+ Pase y regate","passing","dribbling"],
+  ["defensa","🧱","Defensa","+ Defensa y físico","defending","physical"],
+  ["completo","🌟","Entrenamiento completo","Mejora general","all","all"],
+  ["gimnasio","🏋️","Gimnasio","+ Físico, menor riesgo de lesión","physical","physical"]
+ ];
+ $("#trainingGrid").innerHTML=plans.map(p=>`
+  <div class="training-card"><div style="font-size:25px">${p[1]}</div><h3>${p[2]}</h3><p>${p[3]}. Consume entre 12 y 22 puntos de energía.</p>
+  <button class="secondary wide train-btn" data-plan="${p[0]}" ${disabled?"disabled":""}>${game.trainedThisMonth?"YA ENTRENADO":"ENTRENAR"}</button></div>
+ `).join("");
+ $$(".train-btn").forEach(b=>b.onclick=()=>train(b.dataset.plan));
+}
+function train(plan){
+ if(game.trainedThisMonth||game.injuredMonths>0)return;
+ const boost=(game.cheats.potential?2.2:1)*(game.age<=22?1.25:game.age>=31?.65:1);
+ let gains={};
+ if(plan==="finalizacion")gains={shooting:rnd(1,3),dribbling:rnd(0,2)};
+ if(plan==="velocidad")gains={pace:rnd(1,3),physical:rnd(1,2)};
+ if(plan==="creacion")gains={passing:rnd(1,3),dribbling:rnd(1,2)};
+ if(plan==="defensa")gains={defending:rnd(1,3),physical:rnd(1,2)};
+ if(plan==="gimnasio")gains={physical:rnd(2,4)};
+ if(plan==="completo")Object.keys(game.attributes).forEach(k=>gains[k]=chance(.55)?1:0);
+ Object.entries(gains).forEach(([k,v])=>game.attributes[k]=clamp(game.attributes[k]+Math.ceil(v*boost),20,99));
+ const cost=plan==="completo"?22:rnd(12,18);
+ game.fitness=clamp(game.fitness-cost,0,100);game.trainedThisMonth=true;game.morale=clamp(game.morale+2,0,100);
+ addLog("🏋️","Sesión completada",`Tu entrenamiento de ${plan} dio resultados. La energía bajó ${cost} puntos.`);
+ toast("Entrenamiento completado");render();
+}
+function setupMatch(){
+ $("#homeName").textContent=game.club.name;$("#homeIcon").textContent=game.club.icon;
+ const rival=pick(opponents);$("#awayName").textContent=rival;$("#awayIcon").textContent=pick(["🐉","🦊","🦁","🛡️","⚔️","🐺"]);
+ $("#matchContext").textContent=game.playedFeatured?"Ya disputaste el partido destacado de este mes.":game.injuredMonths>0?`No puedes jugar: quedan ${game.injuredMonths} mes(es) de lesión.`:"Elige tu enfoque antes de salir a la cancha.";
+ $("#playMatchBtn").disabled=game.playedFeatured||game.injuredMonths>0||game.retired;
+ $("#matchResult").classList.add("hidden");
+}
+function playerRoleChance(){
+ if(game.position==="GK")return {goal:.01,assist:.04};
+ if(game.position==="CB")return {goal:.08,assist:.08};
+ if(game.position==="CM")return {goal:.15,assist:.23};
+ if(game.position==="CAM")return {goal:.25,assist:.34};
+ if(game.position==="LW")return {goal:.32,assist:.28};
+ return {goal:.42,assist:.18};
+}
+function simulateMatch(featured=true,forcedPerfect=false){
+ if(game.injuredMonths>0)return null;
+ const starter=game.cheats.starter||game.overall+game.morale/15+rnd(-8,8)>65;
+ if(!starter&&!featured){
+  if(chance(.45)) return {apps:0,goals:0,assists:0,rating:0,win:false,bench:true};
+ }
+ const perfect=forcedPerfect||game.cheats.perfectNext;
+ if(perfect)game.cheats.perfectNext=false;
+ const role=playerRoleChance();
+ const tacticMod=game.tactic==="attack"?1.35:game.tactic==="team"?.85:1;
+ const assistMod=game.tactic==="team"?1.5:game.tactic==="attack"?.8:1;
+ const form=(game.overall-55)/65+(game.morale-50)/150+(game.fitness-50)/180;
+ let goals=0,assists=0;
+ if(perfect){goals=game.position==="GK"?0:rnd(2,4);assists=rnd(1,3)}
+ else{
+  for(let i=0;i<3;i++) if(chance(clamp(role.goal*tacticMod*(.45+form),.015,.68)))goals++;
+  for(let i=0;i<2;i++) if(chance(clamp(role.assist*assistMod*(.5+form),.02,.55)))assists++;
+ }
+ let rating=perfect?10:clamp(5.4+goals*1.25+assists*.8+form*1.2+rnd(-7,7)/10,4,10);
+ const teamStrength=game.club.tier*7+game.overall*.25+rnd(-18,18);
+ const win=perfect||teamStrength>45;
+ const injuryRisk=game.cheats.noInjury?0:(game.tactic==="attack"?.055:.025)*(game.fitness<40?2.5:1);
+ let injury=0;
+ if(chance(injuryRisk)){injury=rnd(1,4);game.injuredMonths=injury}
+ const energyLoss=game.tactic==="attack"?rnd(18,25):game.tactic==="team"?rnd(12,18):rnd(14,21);
+ game.fitness=clamp(game.fitness-energyLoss,0,100);
+ game.morale=clamp(game.morale+(win?5:-3)+(rating>=8?4:0),0,100);
+ game.reputation=clamp(game.reputation+goals*.9+assists*.6+(rating>=8?.8:0),0,100);
+ game.season.apps++;game.season.goals+=goals;game.season.assists+=assists;game.season.ratingSum+=rating;
+ game.career.apps++;game.career.goals+=goals;game.career.assists+=assists;
+ return {apps:1,goals,assists,rating,win,injury,energyLoss,bench:false};
+}
+function playFeaturedMatch(){
+ if(game.playedFeatured||game.injuredMonths>0||game.retired)return;
+ const r=simulateMatch(true);
+ game.playedFeatured=true;
+ const score=r.win?`${rnd(1,4)}-${rnd(0,2)}`:`${rnd(0,2)}-${rnd(1,4)}`;
+ $("#matchResult").classList.remove("hidden");
+ $("#matchResult").innerHTML=`
+  <div style="font-size:30px;font-weight:950">${r.win?"VICTORIA":"PARTIDO DIFÍCIL"} · ${score}</div>
+  <div style="margin-top:8px;color:var(--muted)">Nota <b style="color:white">${r.rating.toFixed(1)}</b> · ${r.goals} gol(es) · ${r.assists} asistencia(s)</div>
+  ${r.injury?`<div style="color:var(--red);font-weight:850;margin-top:8px">🚑 Lesión: ${r.injury} mes(es) de baja</div>`:""}
+ `;
+ addLog(r.win?"🏆":"⚽",r.rating>=8?"Actuación brillante":"Partido disputado",`Nota ${r.rating.toFixed(1)}, ${r.goals} gol(es) y ${r.assists} asistencia(s).`);
+ render();
+}
+function simulateRestOfMonth(){
+ const n=rnd(2,4);
+ let apps=0,g=0,a=0,wins=0;
+ for(let i=0;i<n;i++){
+  if(game.injuredMonths>0)break;
+  const r=simulateMatch(false);
+  if(r&&r.apps){apps++;g+=r.goals;a+=r.assists;if(r.win)wins++}
+ }
+ return {apps,g,a,wins,n};
+}
+function advanceMonth(){
+ if(game.retired)return;
+ const sim=simulateRestOfMonth();
+ const wages=game.salary*4;
+ game.money+=wages;
+ game.fitness=clamp(game.fitness+rnd(28,42),0,100);
+ game.morale=clamp(game.morale+rnd(-3,4),0,100);
+ if(game.injuredMonths>0)game.injuredMonths--;
+ if(game.agentCooldown>0)game.agentCooldown--;
+ addLog("📅","Mes completado",`${sim.apps} apariciones adicionales, ${sim.g} goles, ${sim.a} asistencias. Cobraste ${fmtMoney(wages)}.`);
+ game.month++;
+ game.trainedThisMonth=false;game.restedThisMonth=false;game.playedFeatured=false;
+ maybeNationalTeam();
+ if(game.month>10){finishSeason();return}
+ if(chance(.66))triggerRandomEvent();
+ else {maybeGenerateOffers();render()}
+}
+function maybeNationalTeam(){
+ if(game.age>=18&&game.overall>=74&&chance((game.overall-68)/100)){
+  const caps=rnd(1,3), goals=game.position==="ST"||game.position==="LW"?rnd(0,caps):chance(.2)?1:0;
+  game.nationalTeam=true;game.career.nationalCaps+=caps;game.career.nationalGoals+=goals;game.reputation=clamp(game.reputation+caps,0,100);
+  addLog("🌍",`Convocado por ${game.nation}`,`Jugaste ${caps} partido(s) internacional(es) y marcaste ${goals} gol(es).`);
+ }
+}
+function seasonTitleChance(){
+ const perf=game.season.apps?game.season.ratingSum/game.season.apps:5;
+ return clamp(.08+game.club.tier*.025+(perf-6)*.05,0.05,.58);
+}
+function finishSeason(){
+ const avg=game.season.apps?game.season.ratingSum/game.season.apps:0;
+ let titles=0;
+ if(chance(seasonTitleChance()))titles++;
+ if(game.club.tier>=5&&chance(seasonTitleChance()*.45))titles++;
+ game.season.titles=titles;game.career.titles+=titles;
+ const seasonAwards=[];
+ if(game.age<=21&&avg>=7.2){seasonAwards.push("Mejor joven");game.awards.push(`${seasonLabel()} · Mejor joven`)}
+ if(game.season.goals>=22){seasonAwards.push("Goleador de liga");game.awards.push(`${seasonLabel()} · Goleador de liga`)}
+ if(game.season.assists>=16){seasonAwards.push("Máximo asistidor");game.awards.push(`${seasonLabel()} · Máximo asistidor`)}
+ if(titles){seasonAwards.push("Campeón de liga");game.awards.push(`${seasonLabel()} · Campeón`)}
+ if(game.overall>=91&&avg>=8.1&&game.season.goals+game.season.assists>=28&&chance(.58)){
+  game.career.ballonDors++;seasonAwards.push("Balón de Oro");game.awards.push(`${seasonLabel()} · Balón de Oro`);
+ }
+ game.history.push({season:seasonLabel(),age:game.age,club:game.club.name,apps:game.season.apps,goals:game.season.goals,assists:game.season.assists,avg:avg.toFixed(2),titles,overall:game.overall});
+ const growthBase=game.age<=20?rnd(2,5):game.age<=25?rnd(1,3):game.age<=29?rnd(0,2):game.age<=32?rnd(-1,1):rnd(-3,-1);
+ const growth=game.cheats.potential?Math.max(3,growthBase+2):growthBase;
+ Object.keys(game.attributes).forEach(k=>{
+  const room=game.potential-game.attributes[k];
+  const delta=growth>0?Math.min(growth,Math.max(0,Math.ceil(room/10))):growth;
+  game.attributes[k]=clamp(game.attributes[k]+delta,20,99);
+ });
+ game.reputation=clamp(game.reputation+(avg-6)*3+titles*5,0,100);
+ addLog("🏁",`Final de ${seasonLabel()}`,`${game.season.apps} PJ · ${game.season.goals} G · ${game.season.assists} A · Nota ${avg.toFixed(2)}${titles?` · ${titles} título(s)`:""}.`);
+ game.age++;game.seasonYear++;game.month=1;game.season={apps:0,goals:0,assists:0,ratingSum:0,titles:0};
+ game.trainedThisMonth=false;game.restedThisMonth=false;game.playedFeatured=false;
+ game.salary=Math.round(game.club.salary*(.7+game.overall/100));
+ generateOffers(true);
+ if(game.age>=40){retireCareer();return}
+ if(game.age>=32){
+  $("#retirementText").textContent=`Tienes ${game.age} años. Tu media es ${game.overall} y has jugado ${game.career.apps} partidos. Puedes retirarte ahora o continuar.`;
+  $("#retirementModal").classList.remove("hidden");
+ }
+ render();
+}
+function retireCareer(){
+ game.retired=true;
+ if(game.overall>=88||game.career.goals>=400)game.awards.push("Leyenda del fútbol");
+ addLog("🏟️","Cuelgas las botas",`${game.name} anuncia su retiro a los ${game.age} años.`);
+ $("#retirementModal").classList.add("hidden");
+ render();setTab("stats");
+}
+function rest(){
+ if(game.restedThisMonth||game.retired)return;
+ game.fitness=clamp(game.fitness+38,0,100);game.morale=clamp(game.morale+8,0,100);game.restedThisMonth=true;game.trainedThisMonth=true;
+ addLog("🛌","Día libre",`Recuperaste energía y despejaste la mente.`);
+ toast("Energía y moral recuperadas");render();
+}
+function talkAgent(){
+ if(game.agentCooldown>0||game.retired)return;
+ game.agentCooldown=2;
+ if(chance(.55)||game.reputation>45){generateOffers(false);toast("Tu agente consiguió nuevos contactos")}
+ else {game.morale=clamp(game.morale+4,0,100);addLog("🤝","Reunión con tu agente","Aún no hay una oferta firme, pero varios clubes están observándote.");toast("Hay clubes siguiéndote")}
+ render();
+}
+function generateOffers(endSeason=false,elite=false){
+ game.offers=[];
+ let target=Math.max(1,Math.round(game.overall/10-5));
+ if(endSeason)target++;
+ if(elite)target=8;
+ const eligible=clubs.filter(c=>c.name!==game.club.name&&Math.abs(c.tier-target)<=3&&(elite?c.tier>=7:true));
+ const pool=[...eligible].sort(()=>Math.random()-.5).slice(0,3);
+ pool.forEach(c=>{
+  const contractYears=rnd(2,5);
+  const salary=Math.round(c.salary*(.75+game.overall/95)*(elite?1.25:1));
+  const role=game.overall>c.tier*8+15?"Titular":game.overall>c.tier*7+10?"Rotación":"Promesa";
+  game.offers.push({...c,contractYears,offerSalary:salary,role});
+ });
+ if(pool.length)addLog("📨","Ofertas recibidas",`${pool.length} club(es) enviaron una propuesta formal.`);
+}
+function maybeGenerateOffers(){
+ if(game.reputation>18&&chance(.25))generateOffers(false);
+}
+function renderOffers(){
+ const box=$("#offersGrid");
+ if(!game.offers.length){box.innerHTML=`<div class="offer" style="grid-column:1/-1;text-align:center"><div style="font-size:35px">📭</div><h3>Sin ofertas por ahora</h3><p>Rinde bien, aumenta tu fama o habla con tu agente. También puedes usar cheats.</p></div>`;return}
+ box.innerHTML=game.offers.map((o,i)=>`
+  <div class="offer">
+   <div class="offer-top"><div><div style="font-size:27px">${o.icon}</div><h3>${o.name}</h3><p>${o.country}</p></div><div class="offer-rating">${o.tier}/10</div></div>
+   <div class="offer-meta">
+    <div class="mini"><b>${fmtMoney(o.offerSalary)}/sem</b><span>Sueldo</span></div>
+    <div class="mini"><b>${o.contractYears} años</b><span>Contrato</span></div>
+    <div class="mini"><b>${o.role}</b><span>Rol</span></div>
+    <div class="mini"><b>Nivel ${o.tier}</b><span>Club</span></div>
+   </div>
+   <div class="btn-row"><button class="primary accept-offer" data-i="${i}">FICHAR</button><button class="secondary reject-offer" data-i="${i}">RECHAZAR</button></div>
+  </div>
+ `).join("");
+ $$(".accept-offer").forEach(b=>b.onclick=()=>acceptOffer(+b.dataset.i));
+ $$(".reject-offer").forEach(b=>b.onclick=()=>{game.offers.splice(+b.dataset.i,1);render()});
+}
+function acceptOffer(i){
+ const o=game.offers[i];if(!o)return;
+ const old=game.club.name;
+ game.club={name:o.name,icon:o.icon,tier:o.tier,country:o.country,salary:o.offerSalary,rep:o.rep};
+ game.salary=o.offerSalary;game.morale=clamp(game.morale+12,0,100);game.reputation=clamp(game.reputation+o.tier*2,0,100);
+ game.offers=[];addLog("✍️","¡Fichaje confirmado!",`${game.name} deja ${old} y firma por ${o.name}. Sueldo: ${fmtMoney(o.offerSalary)} por semana.`);
+ toast(`Ahora juegas en ${o.name}`);render();setTab("career");
+}
+function randomEventPool(){
+ return [
+  {icon:"🎤",title:"Entrevista viral",text:"Un periodista te pregunta si ya eres la próxima gran estrella.",opts:[
+   ["Mantener la humildad",()=>{game.morale+=3;game.reputation+=2},"+ Moral, + fama"],
+   ["Decir que serás el mejor",()=>{game.reputation+=7;game.morale+=5},"Mucha fama, pero genera presión"],
+   ["Evitar la entrevista",()=>{game.fitness+=5;game.reputation-=1},"+ Energía, - fama"]
+  ]},
+  {icon:"🎉",title:"Fiesta del equipo",text:"Tus compañeros organizan una fiesta antes de un partido importante.",opts:[
+   ["Ir y pasarlo bien",()=>{game.morale+=10;game.fitness-=14},"+ Moral, - energía"],
+   ["Quedarte entrenando",()=>{game.attributes.shooting+=1;game.attributes.passing+=1;game.morale-=3},"+ Atributos, - moral"],
+   ["Ir solo un rato",()=>{game.morale+=5;game.fitness-=5},"Resultado equilibrado"]
+  ]},
+  {icon:"👟",title:"Patrocinio de botas",text:"Una marca te ofrece tu primer contrato publicitario.",opts:[
+   ["Firmar",()=>{game.money+=Math.max(5000,game.reputation*2000);game.reputation+=3},"Dinero y fama"],
+   ["Negociar más",()=>{if(chance(.55)){game.money+=game.reputation*3500;game.reputation+=2}else game.reputation-=2},"Más premio o nada"],
+   ["Rechazar y enfocarte",()=>{game.morale+=4;game.fitness+=4},"+ Mentalidad"]
+  ]},
+  {icon:"🩺",title:"Molestia muscular",text:"Sientes una molestia antes del entrenamiento.",opts:[
+   ["Descansar",()=>{game.fitness+=20;game.morale-=1},"Evitas riesgos"],
+   ["Entrenar suave",()=>{game.fitness-=6;if(chance(.2)&&!game.cheats.noInjury)game.injuredMonths=1},"Pequeño riesgo"],
+   ["Entrenar al máximo",()=>{Object.keys(game.attributes).forEach(k=>game.attributes[k]+=chance(.35)?1:0);if(chance(.45)&&!game.cheats.noInjury)game.injuredMonths=rnd(1,3)},"Gran riesgo, gran premio"]
+  ]},
+  {icon:"🧑‍🏫",title:"El entrenador te desafía",text:"Te pide que juegues en una posición diferente durante unas semanas.",opts:[
+   ["Aceptar con entusiasmo",()=>{game.passing+=0;game.morale+=5;game.reputation+=2},"+ Versatilidad y moral"],
+   ["Pedir seguir en tu puesto",()=>{game.attributes.shooting+=1;game.morale-=1},"+ Especialización"],
+   ["Discutir la decisión",()=>{game.morale-=6;game.reputation-=4},"Puede afectar tu relación"]
+  ]},
+  {icon:"❤️",title:"Afición encantada",text:"Los hinchas corean tu nombre después de una buena racha.",opts:[
+   ["Firmar autógrafos",()=>{game.reputation+=6;game.fitness-=4},"+ Fama"],
+   ["Regalar tu camiseta",()=>{game.reputation+=8;game.money-=500},"++ Fama"],
+   ["Ir directo a casa",()=>{game.fitness+=7;game.reputation-=1},"+ Energía"]
+  ]}
+ ];
+}
+function triggerRandomEvent(){
+ const e=pick(randomEventPool());
+ $("#eventIcon").textContent=e.icon;$("#eventTitle").textContent=e.title;$("#eventText").textContent=e.text;
+ $("#eventOptions").innerHTML=e.opts.map((o,i)=>`<button class="event-option" data-i="${i}"><b>${o[0]}</b><br><small style="color:var(--muted)">${o[2]}</small></button>`).join("");
+ $$("#eventOptions .event-option").forEach(b=>b.onclick=()=>{
+  e.opts[+b.dataset.i][1]();
+  game.morale=clamp(game.morale,0,100);game.fitness=clamp(game.fitness,0,100);game.reputation=clamp(game.reputation,0,100);
+  Object.keys(game.attributes).forEach(k=>game.attributes[k]=clamp(game.attributes[k],20,99));
+  addLog(e.icon,e.title,`Elegiste: ${e.opts[+b.dataset.i][0]}.`);
+  $("#eventModal").classList.add("hidden");maybeGenerateOffers();render();
+ });
+ $("#eventModal").classList.remove("hidden");
+}
+function renderStats(){
+ $("#careerApps").textContent=game.career.apps;$("#careerGoals").textContent=game.career.goals;$("#careerAssists").textContent=game.career.assists;
+ $("#careerTitles").textContent=game.career.titles;$("#nationalCaps").textContent=game.career.nationalCaps;$("#ballonDors").textContent=game.career.ballonDors;
+ $("#awards").innerHTML=game.awards.length?game.awards.map(a=>`<span class="award">🏅 ${a}</span>`).join(""):`<span style="color:var(--muted);font-size:13px">Aún no has ganado premios.</span>`;
+ $("#historyBody").innerHTML=game.history.length?[...game.history].reverse().map(h=>`<tr><td>${h.season}</td><td>${h.age}</td><td>${h.club}</td><td>${h.apps}</td><td>${h.goals}</td><td>${h.assists}</td><td>${h.avg}</td><td>${h.titles}</td><td>${h.overall}</td></tr>`).join(""):`<tr><td colspan="9" style="text-align:center;color:var(--muted)">Completa tu primera temporada para ver el historial.</td></tr>`;
+}
+function renderCheats(){
+ $("#cheatNoInjury").checked=game.cheats.noInjury;$("#cheatStarter").checked=game.cheats.starter;$("#cheatMoney").checked=game.cheats.money;$("#cheatPotential").checked=game.cheats.potential;
+}
+function useCheat(type){
+ if(type==="plus5"){Object.keys(game.attributes).forEach(k=>game.attributes[k]=clamp(game.attributes[k]+5,20,99));toast("+5 a todos los atributos")}
+ if(type==="money10"){game.money+=10000000;toast("Recibiste €10 millones")}
+ if(type==="perfect"){game.cheats.perfectNext=true;toast("Próximo partido: actuación perfecta")}
+ if(type==="offers"){generateOffers(false,true);toast("Ofertas de élite generadas")}
+ if(type==="heal"){game.injuredMonths=0;game.fitness=100;game.morale=100;toast("Recuperación completa")}
+ if(type==="age"){game.age=clamp(parseInt($("#ageCheat").value)||18,15,39);toast(`Edad cambiada a ${game.age}`)}
+ addLog("🧪","Cheat utilizado",`Activaste el truco: ${type}.`);render();
+}
+
+$("#startCareerBtn").onclick=()=>{
+ game=baseState();
+ game.name=$("#createName").value.trim()||"Alex Melo";game.nation=$("#createNation").value;game.position=$("#createPosition").value;
+ game.foot=$("#createFoot").value;game.style=$("#createStyle").value;game.difficulty=$("#createDifficulty").value;
+ applyCreationBonuses();
+ addLog("🌱","Comienza una nueva historia",`${game.name}, de ${game.nation}, entra a ${game.club.name} con solo 15 años.`);
+ $("#newCareerModal").classList.add("hidden");render();
+};
+$("#saveBtn").onclick=()=>saveGame();
+$("#newBtn").onclick=resetCareer;
+$("#quickMatchBtn").onclick=()=>{setTab("match");setupMatch()};
+$("#advanceBtn").onclick=advanceMonth;
+$("#agentBtn").onclick=talkAgent;
+$("#restBtn").onclick=rest;
+$("#playMatchBtn").onclick=playFeaturedMatch;
+$("#retireYes").onclick=retireCareer;
+$("#retireNo").onclick=()=>$("#retirementModal").classList.add("hidden");
+
+$$("[data-tab]").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+$$(".tactic").forEach(b=>b.onclick=()=>{
+ game.tactic=b.dataset.tactic;$$(".tactic").forEach(x=>x.classList.toggle("active",x===b));
+});
+$("#cheatNoInjury").onchange=e=>{game.cheats.noInjury=e.target.checked;render()};
+$("#cheatStarter").onchange=e=>{game.cheats.starter=e.target.checked;render()};
+$("#cheatMoney").onchange=e=>{game.cheats.money=e.target.checked;render()};
+$("#cheatPotential").onchange=e=>{game.cheats.potential=e.target.checked;render()};
+$$("[data-cheat]").forEach(b=>b.onclick=()=>useCheat(b.dataset.cheat));
+
+window.addEventListener("beforeunload",()=>saveGame(true));
+if(loadGame()){
+ $("#newCareerModal").classList.add("hidden");
+ addLog("💾","Partida cargada","Continuaste tu carrera guardada.");
+}
+render();setupMatch();
+</script>
+</body>
+</html>
