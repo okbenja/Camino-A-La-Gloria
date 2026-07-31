@@ -1,0 +1,8 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>TouchGrass</title></head><body><script>
+(function(){
+ const requested=location.pathname+location.search+location.hash;
+ sessionStorage.setItem('touchgrass:requested-route',requested);
+ const base=(location.hostname.endsWith('github.io')||location.pathname.startsWith('/touchgrass'))?'/touchgrass/':'/';
+ location.replace(base);
+})();
+</script></body></html>

@@ -1,0 +1,11 @@
+{
+  "name": "TouchGrass",
+  "short_name": "TouchGrass",
+  "description": "Simulador de sociedad autónoma, persistente y multigeneracional.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090c12",
+  "theme_color": "#090c12",
+  "lang": "es"
+}
